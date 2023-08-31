@@ -97,7 +97,8 @@
     "enum-generator": "^0.0.1",
     "eslint": "^8.34.0",
     "lucide-react": "^0.171.0",
-    "turbo": "^1.10.1"
+    "turbo": "^1.10.1",
+    "tw-elements": "^1.0.0-beta3"
   },
   "resolutions": {
     "@apidevtools/json-schema-ref-parser": "9.0.9",
@@ -119,7 +120,6 @@
   },
   "engines": {
     "node": "16.x",
-
     "npm": ">=7.0.0",
     "yarn": ">=1.19.0 < 2.0.0"
   },
