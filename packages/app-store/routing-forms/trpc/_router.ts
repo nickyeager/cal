@@ -71,6 +71,11 @@ const appRoutingForms = router({
     const handler = await getHandler("report", () => import("./report.handler"));
     return handler({ ctx, input });
   }),
+
+  // players: authedProcedure.query(async ({ ctx, input }) => {
+  //   const handler = await getHandler("report", () => import("./report.handler"));
+  //   return handler({ ctx });
+  // }),
 });
 
 export default appRoutingForms;

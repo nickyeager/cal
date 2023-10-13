@@ -20,6 +20,7 @@ const ENDPOINTS = [
   "admin",
   "apiKeys",
   "appRoutingForms",
+  "appDriveDrop",
   "apps",
   "auth",
   "availability",

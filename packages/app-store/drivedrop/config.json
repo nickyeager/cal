@@ -1,0 +1,17 @@
+{
+  "name": "DriveDrop",
+  "slug": "drivedrop",
+  "type": "drivedrop_other",
+  "logo": "icon.svg",
+  "url": "https://example.com/link",
+  "variant": "other",
+  "categories": ["other"],
+  "publisher": "DriveDropApp",
+  "email": "yeag123@gmail.com",
+  "description": "Setup tournaments and games for pickleball",
+  "extendsFeature": "EventType",
+  "isTemplate": false,
+  "__createdUsingCli": true,
+  "__template": "event-type-app-card",
+  "dirName": "drivedrop"
+}

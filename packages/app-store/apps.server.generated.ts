@@ -13,6 +13,7 @@ export const apiHandlers = {
   closecom: import("./closecom/api"),
   cron: import("./cron/api"),
   discord: import("./discord/api"),
+  drivedrop: import("./drivedrop/api"),
   eightxeight: import("./eightxeight/api"),
   "element-call": import("./element-call/api"),
   exchange2013calendar: import("./exchange2013calendar/api"),

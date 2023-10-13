@@ -1,6 +1,7 @@
 import type { GetServerSidePropsContext } from "next";
 
 import { getAppWithMetadata } from "@calcom/app-store/_appRegistry";
+import DriveDropRoutingConfig from "@calcom/app-store/drivedrop/pages/app-routing.config";
 import RoutingFormsRoutingConfig from "@calcom/app-store/routing-forms/pages/app-routing.config";
 import TypeformRoutingConfig from "@calcom/app-store/typeform/pages/app-routing.config";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
@@ -36,6 +37,7 @@ type NotFound = {
 const AppsRouting = {
   "routing-forms": RoutingFormsRoutingConfig,
   typeform: TypeformRoutingConfig,
+  drivedrop: DriveDropRoutingConfig,
 };
 
 function getRoute(appName: string, pages: string[]) {

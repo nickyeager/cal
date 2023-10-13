@@ -13,6 +13,7 @@ import closecom_config_json from "./closecom/config.json";
 import cron_config_json from "./cron/config.json";
 import { metadata as dailyvideo__metadata_ts } from "./dailyvideo/_metadata";
 import discord_config_json from "./discord/config.json";
+import drivedrop_config_json from "./drivedrop/config.json";
 import eightxeight_config_json from "./eightxeight/config.json";
 import element_call_config_json from "./element-call/config.json";
 import { metadata as exchange2013calendar__metadata_ts } from "./exchange2013calendar/_metadata";
@@ -84,6 +85,7 @@ export const appStoreMetadata = {
   cron: cron_config_json,
   dailyvideo: dailyvideo__metadata_ts,
   discord: discord_config_json,
+  drivedrop: drivedrop_config_json,
   eightxeight: eightxeight_config_json,
   "element-call": element_call_config_json,
   exchange2013calendar: exchange2013calendar__metadata_ts,
