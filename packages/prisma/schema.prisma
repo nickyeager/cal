@@ -245,10 +245,15 @@ model User {
   organizationId       Int?
   organization         Team?                   @relation("scope", fields: [organizationId], references: [id], onDelete: SetNull)
   accessCodes          AccessCode[]
+
   // Linking account code for orgs v2
   //linkedByUserId       Int?
   //linkedBy             User?                   @relation("linked_account", fields: [linkedByUserId], references: [id], onDelete: Cascade)
   //linkedUsers          User[]                  @relation("linked_account")*/
+
+  // Define the many-to-many relationship with Users
+  tournaments UserTournament[]
+  matches     UserMatch[]
 
   @@unique([email])
   @@unique([email, username])
@@ -737,6 +742,63 @@ enum WorkflowActions {
   EMAIL_ADDRESS
   WHATSAPP_ATTENDEE
   WHATSAPP_NUMBER
+}
+
+model Tournament {
+  id        Int            @id @default(autoincrement())
+  name      String
+  startDate DateTime
+  type      TournamentType
+  createdAt DateTime       @default(now())
+
+  users   UserTournament[]
+  matches Match[]
+}
+
+enum TournamentType {
+  KNOCKOUT
+  ROUND_ROBIN
+  LADDER
+  KING_OF_COURT
+}
+
+model UserTournament {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  tournamentId Int
+  createdAt    DateTime @default(now())
+
+  // Define the relationships
+  user       User       @relation(fields: [userId], references: [id])
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+}
+
+model UserMatch {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  matchId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  score     Int
+
+  // Define the relationships
+  user  User  @relation(fields: [userId], references: [id])
+  match Match @relation(fields: [matchId], references: [id])
+}
+
+model Match {
+  id           Int      @id @default(autoincrement())
+  tournamentId Int
+  round        Int
+  matchNumber  Int
+  scores       Int[] // Scores for each player
+  winnerIds    Int[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+
+  // Define the relationships
+  tournament Tournament  @relation(fields: [tournamentId], references: [id])
+  players    UserMatch[]
 }
 
 model WorkflowStep {
