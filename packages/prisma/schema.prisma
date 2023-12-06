@@ -278,6 +278,7 @@ model Team {
   hideBranding        Boolean                 @default(false)
   isPrivate           Boolean                 @default(false)
   hideBookATeamMember Boolean                 @default(false)
+  isTournament        Boolean                 @default(true)
   members             Membership[]
   eventTypes          EventType[]
   workflows           Workflow[]
@@ -301,7 +302,10 @@ model Team {
   apiKeys             ApiKey[]
   credentials         Credential[]
   accessCodes         AccessCode[]
+  tournamentId        Int?
+  tournament          Tournament?             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 
+  @@unique([tournamentId])
   @@unique([slug, parentId])
 }
 
@@ -745,14 +749,21 @@ enum WorkflowActions {
 }
 
 model Tournament {
-  id        Int            @id @default(autoincrement())
+  id        Int              @id @default(autoincrement())
   name      String
-  startDate DateTime
-  type      TournamentType
-  createdAt DateTime       @default(now())
+  slug      String?
+  startDate DateTime?
+  endDate   DateTime?
+  type      TournamentType?
+  location  String?
+  createdAt DateTime         @default(now())
+  logo      String?
+  members   UserTournament[]
+  matches   Match[]
+  teamId    Int?
+  team      Team?            @relation
 
-  users   UserTournament[]
-  matches Match[]
+  @@unique([teamId])
 }
 
 enum TournamentType {
@@ -763,14 +774,20 @@ enum TournamentType {
 }
 
 model UserTournament {
-  id           Int      @id @default(autoincrement())
+  id           Int            @id @default(autoincrement())
   userId       Int
   tournamentId Int
-  createdAt    DateTime @default(now())
-
+  createdAt    DateTime       @default(now())
+  accepted     Boolean        @default(false)
+  paid         Boolean        @default(false)
+  role         MembershipRole @default(MEMBER)
   // Define the relationships
-  user       User       @relation(fields: [userId], references: [id])
-  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournament   Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tournamentId])
+  @@index([tournamentId])
+  @@index([userId])
 }
 
 model UserMatch {

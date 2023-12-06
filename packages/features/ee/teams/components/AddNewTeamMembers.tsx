@@ -98,7 +98,7 @@ export const AddNewTeamMembersForm = ({
           StartIcon={Plus}
           onClick={() => setMemberInviteModal(true)}
           className={classNames("w-full justify-center", defaultValues.members.length > 0 && "mt-6")}>
-          {t("add_team_member")}
+          Add participant to tournament
         </Button>
       </div>
       {isLoading ? (
@@ -178,12 +178,12 @@ export const AddNewTeamMembersForm = ({
         disabled={publishTeamMutation.isLoading}
         onClick={() => {
           if (orgBranding) {
-            router.push("/settings/teams");
+            router.push("/tournaments");
           } else {
             publishTeamMutation.mutate({ teamId });
           }
         }}>
-        {t(orgBranding ? "finish" : "team_publish")}
+        {t(orgBranding ? "finish" : "Publish Tournament")}
       </Button>
     </>
   );

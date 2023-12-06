@@ -11,6 +11,7 @@ import { Button, Meta, showToast, TextField } from "@calcom/ui";
 import { Plus } from "@calcom/ui/components/icon";
 
 import { getLayout } from "../../../settings/layouts/SettingsLayout";
+import { UsersTable } from "../../users/components/UsersTable";
 import DisableTeamImpersonation from "../components/DisableTeamImpersonation";
 import InviteLinkSettingsModal from "../components/InviteLinkSettingsModal";
 import MakeTeamPrivateSwitch from "../components/MakeTeamPrivateSwitch";
@@ -120,8 +121,8 @@ const MembersView = () => {
   return (
     <>
       <Meta
-        title={t("team_members")}
-        description={t("members_team_description")}
+        title="Tournament members"
+        description="List of tournament members"
         CTA={
           isAdmin || isOrgAdminOrOwner ? (
             <Button
@@ -178,6 +179,12 @@ const MembersView = () => {
               <>
                 <hr className="border-subtle my-8" />
                 <MakeTeamPrivateSwitch teamId={team.id} isPrivate={team.isPrivate} disabled={isInviteOpen} />
+              </>
+            )}
+            {team && (isAdmin || isOrgAdminOrOwner) && (
+              <>
+                <hr className="border-subtle my-8" />
+                <UsersTable />
               </>
             )}
           </div>

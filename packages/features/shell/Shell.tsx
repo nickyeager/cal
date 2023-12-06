@@ -1,3 +1,4 @@
+import { Table } from "lucide-react";
 import type { User as UserAuth } from "next-auth";
 import { signOut, useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
@@ -533,6 +534,12 @@ const navigation: NavigationItemType[] = [
     name: "availability",
     href: "/availability",
     icon: Clock,
+  },
+  {
+    name: "Leagues",
+    href: "/leagues",
+    icon: Table,
+    badge: <TeamInviteBadge />,
   },
   {
     name: "teams",

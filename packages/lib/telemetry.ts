@@ -19,6 +19,8 @@ export const telemetryEventTypes = {
   onboardingStarted: "onboarding_started",
   signup: "signup",
   team_created: "team_created",
+  tournament_created: "tournament_created",
+
   slugReplacementAction: "slug_replacement_action",
   org_created: "org_created",
 };

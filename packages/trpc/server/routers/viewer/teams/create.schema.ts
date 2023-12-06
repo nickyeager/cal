@@ -5,6 +5,7 @@ import slugify from "@calcom/lib/slugify";
 export const ZCreateInputSchema = z.object({
   name: z.string(),
   slug: z.string().transform((val) => slugify(val.trim())),
+  location: z.string(),
   logo: z
     .string()
     .optional()

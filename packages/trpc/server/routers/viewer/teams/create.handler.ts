@@ -76,6 +76,17 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
           accepted: true,
         },
       },
+      // Creating a Tournament within the Team creation
+      tournament: {
+        create: {
+          name,
+
+          slug,
+          startDate: tournamentStartDate,
+          endDate: tournamentEndDate,
+          // ...etc...
+        },
+      },
       metadata: !isOrgChildTeam
         ? {
             requestedSlug: slug,
