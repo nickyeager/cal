@@ -177,21 +177,6 @@ export default function MemberListItem(props: Props) {
         {props.team.membership?.accepted && (
           <div className="flex items-center justify-center">
             <ButtonGroup combined containerProps={{ className: "border-default hidden md:flex" }}>
-              {/* TODO: bring availability back. right now its ugly and broken
-               <Tooltip
-                content={
-                  props.member.accepted
-                    ? t("team_view_user_availability")
-                    : t("team_view_user_availability_disabled")
-                }>
-                <Button
-                  disabled={!props.member.accepted}
-                  onClick={() => (props.member.accepted ? setShowTeamAvailabilityModal(true) : null)}
-                  color="secondary"
-                  variant="icon"
-                  StartIcon={Clock}
-                />
-              </Tooltip> */}
               <Tooltip content={t("view_public_page")}>
                 <Button
                   target="_blank"

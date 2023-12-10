@@ -1,4 +1,4 @@
-import { BuildingIcon, PaperclipIcon, UserIcon, Users } from "lucide-react";
+import { BuildingIcon, PaperclipIcon, UserIcon, Users, UserPlusIcon } from "lucide-react";
 import { Trans } from "next-i18next";
 import { useMemo, useState, useRef } from "react";
 import type { FormEvent } from "react";
@@ -29,6 +29,7 @@ import { Link } from "@calcom/ui/components/icon";
 
 import type { PendingMember } from "../lib/types";
 import { GoogleWorkspaceInviteButton } from "./GoogleWorkspaceInviteButton";
+import { TeamUsersTableInvite } from "./TeamUsersTableInvite";
 
 type MemberInvitationModalProps = {
   isOpen: boolean;
@@ -76,6 +77,9 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
     props?.orgMembers && props.orgMembers?.length > 0 ? "ORGANIZATION" : "INDIVIDUAL"
   );
 
+  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [invitedUsers, setInvitedUsers] = useState<Set<string>>(new Set()); // Tracks invited users
+
   const createInviteMutation = trpc.viewer.teams.createInvite.useMutation({
     onSuccess(token) {
       copyInviteLinkToClipboard(token);
@@ -86,6 +90,16 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
       showToast(error.message, "error");
     },
   });
+
+  const handleSendBulkInvites = () => {
+    selectedUsers.forEach((userId) => {
+      const user = flatData.find((user) => user.id === userId);
+      if (user) {
+        props.onSendInvite(user.email);
+        setInvitedUsers((prev) => new Set([...prev, user.email])); // Add to invited users
+      }
+    });
+  };
 
   const copyInviteLinkToClipboard = async (token: string) => {
     const isOrgInvite = isOrg;
@@ -114,6 +128,7 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
         iconLeft: <UserIcon />,
       },
       { value: "BULK", label: t("invite_team_bulk_segment"), iconLeft: <Users /> },
+      { value: "LIST", label: "Existing Users", iconLeft: <UserPlusIcon /> },
     ];
     if (props?.orgMembers && props.orgMembers?.length > 0) {
       array.unshift({
@@ -237,6 +252,32 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
                   </>
                 )}
               />
+            )}
+
+            {modalImportMode === "LIST" && (
+              <>
+                <Controller
+                  name="emailOrUsername"
+                  control={newMemberFormMethods.control}
+                  rules={{
+                    required: t("enter_email_or_username"),
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <>
+                      <TeamUsersTableInvite
+                        members={props?.members}
+                        selectedEmails={value}
+                        handleOnChecked={(userEmail) => {
+                          // If 'value' is not an array, create a new array with 'userEmail' to allow future updates to the array.
+                          // If 'value' is an array, update the array by either adding or removing 'userEmail'.
+                          const newValue = toggleElementInArray(value, userEmail);
+                          onChange(newValue);
+                        }}
+                      />
+                    </>
+                  )}
+                />
+              </>
             )}
             {/* Bulk Invite */}
             {modalImportMode === "BULK" && (
