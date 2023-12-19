@@ -80,10 +80,10 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
       tournament: {
         create: {
           name,
-
           slug,
           startDate: tournamentStartDate,
           endDate: tournamentEndDate,
+
           // ...etc...
         },
       },

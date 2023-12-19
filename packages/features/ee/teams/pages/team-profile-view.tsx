@@ -24,6 +24,7 @@ import {
   Avatar,
   Button,
   ConfirmationDialogContent,
+  DatePicker,
   Dialog,
   DialogTrigger,
   Editor,
@@ -32,6 +33,7 @@ import {
   Label,
   LinkIconButton,
   Meta,
+  Select,
   showToast,
   SkeletonContainer,
   SkeletonText,
@@ -39,6 +41,7 @@ import {
 } from "@calcom/ui";
 import { ExternalLink, Link as LinkIcon, LogOut, Trash2 } from "@calcom/ui/components/icon";
 
+import dayjs from "../../../../dayjs";
 import { getLayout } from "../../../settings/layouts/SettingsLayout";
 
 const regex = new RegExp("^[a-zA-Z0-9-]*$");
@@ -53,6 +56,8 @@ const teamProfileFormSchema = z.object({
     .min(1, { message: "Url cannot be left empty" }),
   logo: z.string(),
   bio: z.string(),
+  start_time: z.string(),
+  start_date: z.string(),
 });
 
 const ProfileView = () => {
@@ -65,6 +70,8 @@ const ProfileView = () => {
   const [firstRender, setFirstRender] = useState(true);
   const orgBranding = useOrgBranding();
 
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+
   useLayoutEffect(() => {
     document.body.focus();
   }, []);
@@ -75,12 +82,18 @@ const ProfileView = () => {
     },
     async onSuccess() {
       await utils.viewer.teams.get.invalidate();
-      showToast(t("your_team_updated_successfully"), "success");
+      showToast("Your tournament was updated successfully", "success");
     },
   });
 
+  const defaultStartTime = "09:00";
+  const defaultStartDate = new Date();
+
   const form = useForm({
     resolver: zodResolver(teamProfileFormSchema),
+    defaultValues: {
+      start_time: defaultStartTime,
+    },
   });
 
   const { data: team, isLoading } = trpc.viewer.teams.get.useQuery(
@@ -96,6 +109,8 @@ const ProfileView = () => {
           form.setValue("slug", team.slug || "");
           form.setValue("bio", team.bio || "");
           form.setValue("logo", team.logo || "");
+          form.setValue("start_time", team.start_time || defaultStartTime);
+          form.setValue("start_date", team.start_date || "");
           if (team.slug === null && (team?.metadata as Prisma.JsonObject)?.requestedSlug) {
             form.setValue("slug", ((team?.metadata as Prisma.JsonObject)?.requestedSlug as string) || "");
           }
@@ -114,7 +129,7 @@ const ProfileView = () => {
   const deleteTeamMutation = trpc.viewer.teams.delete.useMutation({
     async onSuccess() {
       await utils.viewer.teams.list.invalidate();
-      showToast(t("your_team_disbanded_successfully"), "success");
+      showToast("Your tournament has been ", "success");
       router.push(`${WEBAPP_URL}/teams`);
     },
   });
@@ -154,9 +169,14 @@ const ProfileView = () => {
       });
   }
 
+  const timeOptions = Array.from({ length: 24 }, (_, index) => {
+    const hour = index < 10 ? `0${index}` : index;
+    return { value: `${hour}:00`, label: `${hour}:00` };
+  });
+
   return (
     <>
-      <Meta title={t("profile")} description={t("profile_team_description")} />
+      <Meta title="Tournament" description="Tournament information" />
       {!isLoading ? (
         <>
           {isAdmin ? (
@@ -169,10 +189,13 @@ const ProfileView = () => {
                     slug: values.slug,
                     bio: values.bio,
                     logo: values.logo,
+                    start_time: values.start_time,
+                    start_date: values.start_date,
                   };
                   objectKeys(variables).forEach((key) => {
                     if (variables[key as keyof typeof variables] === team?.[key]) delete variables[key];
                   });
+
                   mutation.mutate({ id: team.id, ...variables });
                 }
               }}>
@@ -207,7 +230,6 @@ const ProfileView = () => {
                   <hr className="border-subtle my-8" />
                 </>
               )}
-
               <Controller
                 control={form.control}
                 name="name"
@@ -215,7 +237,7 @@ const ProfileView = () => {
                   <div className="mt-8">
                     <TextField
                       name="name"
-                      label={t("team_name")}
+                      label="Tournament Name"
                       value={value}
                       onChange={(e) => {
                         form.setValue("name", e?.target.value);
@@ -231,7 +253,7 @@ const ProfileView = () => {
                   <div className="mt-8">
                     <TextField
                       name="slug"
-                      label={t("team_url")}
+                      label="Tournament url"
                       value={value}
                       addOnLeading={
                         team.parent && orgBranding
@@ -246,6 +268,48 @@ const ProfileView = () => {
                   </div>
                 )}
               />
+              <Controller
+                control={form.control}
+                name="start_date"
+                render={({ field }) => (
+                  <div className="mt-8">
+                    <Label>Start Date</Label>
+                    <DatePicker
+                      minDate={new Date()}
+                      date={field.value ? new Date(field.value) : new Date()} // Convert the string back to a Date object
+                      onDatesChange={(newDate) => {
+                        const dateValue = newDate ? dayjs(newDate).format("YYYY-MM-DD") : null;
+                        field.onChange(dateValue); // Update React Hook Form's state when date changes
+                      }}
+                      disabled={false} // Optional: Set to true to disable the date picker
+                    />
+                  </div>
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="start_time"
+                render={({ field }) => {
+                  return (
+                    <div className="mt-8">
+                      <Label>Start Time</Label>
+                      <Select
+                        placeholder="Start Time"
+                        options={timeOptions}
+                        defaultValue={timeOptions.find((option) => option.value === "09:00")} // Set default value here
+                        isSearchable={true}
+                        value={timeOptions.find((option) => option.value === field.value)} // Set the value from RHF state
+                        onChange={(selected) => {
+                          field.onChange(selected ? selected.value : ""); // Update RHF state
+                        }}
+                        className="block w-full min-w-0 flex-1 rounded-sm text-sm "
+                        // Connect the ref for focus management
+                      />
+                    </div>
+                  );
+                }}
+              />
+
               <div className="mt-8">
                 <Label>{t("about")}</Label>
                 <Editor

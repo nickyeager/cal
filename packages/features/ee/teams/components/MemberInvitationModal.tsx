@@ -131,6 +131,7 @@ export default function MemberInvitationModal(props: MemberInvitationModalProps)
       { value: "LIST", label: "Existing Users", iconLeft: <UserPlusIcon /> },
     ];
     if (props?.orgMembers && props.orgMembers?.length > 0) {
+      x;
       array.unshift({
         value: "ORGANIZATION",
         label: t("organization"),

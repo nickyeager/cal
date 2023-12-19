@@ -7,6 +7,8 @@ export const ZUpdateInputSchema = z.object({
   bio: z.string().optional(),
   name: z.string().optional(),
   logo: z.string().optional(),
+  start_date: z.string().optional(),
+  start_time: z.string().optional(),
   slug: z
     .string()
     .transform((val) => slugify(val.trim()))

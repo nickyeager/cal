@@ -20,6 +20,7 @@ const PlainForm = <T extends FieldValues>(props: FormProps<T>, ref: Ref<HTMLForm
       <form
         ref={ref}
         onSubmit={(event) => {
+          console.log("called");
           event.preventDefault();
           event.stopPropagation();
 

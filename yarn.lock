@@ -3711,11 +3711,11 @@ __metadata:
   resolution: "@calcom/prisma@workspace:packages/prisma"
   dependencies:
     "@calcom/lib": "*"
-    "@prisma/client": ^5.4.2
+    "@prisma/client": 5.4.2
     "@prisma/extension-accelerate": ^0.6.2
     "@prisma/generator-helper": ^5.4.2
     npm-run-all: ^4.1.5
-    prisma: ^5.4.2
+    prisma: 5.4.2
     ts-node: ^10.9.1
     zod: ^3.22.2
     zod-prisma: ^0.5.4
@@ -7044,7 +7044,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@prisma/client@npm:^5.4.2":
+"@prisma/client@npm:5.4.2":
   version: 5.4.2
   resolution: "@prisma/client@npm:5.4.2"
   dependencies:
@@ -15189,6 +15189,7 @@ __metadata:
     "@changesets/cli": ^2.26.1
     "@deploysentinel/playwright": ^0.3.3
     "@playwright/test": ^1.31.2
+    "@prisma/client": 5.4.2
     "@snaplet/copycat": ^0.3.0
     "@testing-library/jest-dom": ^5.16.5
     "@types/jsonwebtoken": ^9.0.3
@@ -15205,6 +15206,7 @@ __metadata:
     mailhog: ^4.16.0
     node-ical: ^0.16.1
     prettier: ^2.8.6
+    prisma: 5.4.2
     prismock: ^1.21.1
     tsc-absolute: ^1.0.0
     turbo: ^1.10.1
@@ -29149,7 +29151,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prisma@npm:^5.4.2":
+"prisma@npm:5.4.2":
   version: 5.4.2
   resolution: "prisma@npm:5.4.2"
   dependencies:

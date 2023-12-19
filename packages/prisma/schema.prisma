@@ -753,6 +753,7 @@ model Tournament {
   name      String
   slug      String?
   startDate DateTime?
+  startTime String?
   endDate   DateTime?
   type      TournamentType?
   location  String?
@@ -762,6 +763,7 @@ model Tournament {
   matches   Match[]
   teamId    Int?
   team      Team?            @relation
+  slots     Int?
 
   @@unique([teamId])
 }

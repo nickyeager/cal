@@ -1,5 +1,4 @@
-import type { Prisma } from "@prisma/client";
-
+// import type { Prisma } from "@prisma/client";
 import { IS_TEAM_BILLING_ENABLED } from "@calcom/lib/constants";
 import { isTeamAdmin } from "@calcom/lib/server/queries/teams";
 import { closeComUpdateTeam } from "@calcom/lib/sync/SyncServiceManager";
@@ -78,12 +77,32 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
       };
     }
   }
+  try {
+    const updatedTeam = await prisma.team.update({
+      where: { id: input.id },
+      data: {
+        ...data, // Other data fields for the Team
+        tournament: {
+          update: {
+            data: {
+              name: input.name,
+            },
+          },
+        },
+      },
+    });
 
-  const updatedTeam = await prisma.team.update({
-    where: { id: input.id },
-    data,
-  });
+    // Combine startDate and startTime into a DateTime object
+    const tournamentDateTime =
+      input.start_date && input.start_time ? new Date(`${input.start_date}T${input.start_time}`) : null;
 
-  // Sync Services: Close.com
-  if (prevTeam) closeComUpdateTeam(prevTeam, updatedTeam);
+    // Format as ISO string for Prisma DateTime
+    const formattedDateTime = tournamentDateTime ? tournamentDateTime.toISOString() : null;
+    // Sync Services: Close.com
+    if (prevTeam) closeComUpdateTeam(prevTeam, updatedTeam);
+  } catch (error) {
+    // Handle unknown errors
+    console.error("Unknown error:", error);
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error updating the database." });
+  }
 };

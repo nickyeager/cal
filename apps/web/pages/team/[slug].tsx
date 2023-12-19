@@ -8,8 +8,10 @@ import classNames from "classnames";
 import type { GetServerSidePropsContext } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 
+import InvitePlayerModal from "@calcom/ee/teams/components/InvitePlayerModal";
 import { sdkActionManager, useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import EventTypeDescription from "@calcom/features/eventtypes/components/EventTypeDescription";
@@ -26,15 +28,17 @@ import { stripMarkdown } from "@calcom/lib/stripMarkdown";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@calcom/lib/telemetry";
 import prisma from "@calcom/prisma";
 import { RedirectType } from "@calcom/prisma/client";
+import { MembershipRole } from "@calcom/prisma/enums";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
-import { Avatar, AvatarGroup, Button, HeadSeo, UnpublishedEntity } from "@calcom/ui";
+import { trpc } from "@calcom/trpc";
+import { Avatar, AvatarGroup, Button, HeadSeo, showToast, UnpublishedEntity } from "@calcom/ui";
 import { ArrowRight } from "@calcom/ui/components/icon";
 
 import { useToggleQuery } from "@lib/hooks/useToggleQuery";
 import type { inferSSRProps } from "@lib/types/inferSSRProps";
 
 import PageWrapper from "@components/PageWrapper";
-import Team from "@components/team/screens/Team";
+import PlayerList from "@components/team/screens/PlayerList";
 
 import { ssrInit } from "@server/lib/ssr";
 
@@ -42,6 +46,7 @@ import { getTemporaryOrgRedirect } from "../../lib/getTemporaryOrgRedirect";
 
 export type PageProps = inferSSRProps<typeof getServerSideProps>;
 const log = logger.getSubLogger({ prefix: ["team/[slug]"] });
+
 function TeamPage({
   team,
   isUnpublished,
@@ -51,14 +56,17 @@ function TeamPage({
 }: PageProps) {
   useTheme(team.theme);
   const routerQuery = useRouterQuery();
+  const router = useRouter();
   const pathname = usePathname();
   const showMembers = useToggleQuery("members");
-  const { t } = useLocale();
+  const { t, i18n } = useLocale();
   const isEmbed = useIsEmbed();
+  const utils = trpc.useContext();
   const telemetry = useTelemetry();
   const teamName = team.name || "Nameless Team";
   const isBioEmpty = !team.bio || !team.bio.replace("<p><br></p>", "").length;
   const metadata = teamMetadataSchema.parse(team.metadata);
+  const [showModal, setShowModal] = useState();
 
   useEffect(() => {
     telemetry.event(
@@ -78,7 +86,7 @@ function TeamPage({
       </div>
     );
   }
-
+  const inviteMemberMutation = trpc.viewer.teams.inviteMember.useMutation();
   // slug is a route parameter, we don't want to forward it to the next route
   const { slug: _slug, orgSlug: _orgSlug, user: _user, ...queryParamsToForward } = routerQuery;
 
@@ -228,7 +236,57 @@ function TeamPage({
                   </h2>
                 </div>
               ) : (
-                <Team members={team.members} teamName={team.name} />
+                <div className="mx-auto my-10 max-w-2xl">
+                  <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="text-xl font-bold">Players</h2>
+                    <Button
+                      className="mt-4 px-4 py-2 sm:mt-0"
+                      color="secondary"
+                      onClick={() => setShowModal(true)}>
+                      Add Players
+                    </Button>
+                  </div>
+                  <PlayerList members={team.members} />
+                  {showModal && team && (
+                    <InvitePlayerModal
+                      isLoading={inviteMemberMutation.isLoading}
+                      isOpen={showModal}
+                      members={team.members}
+                      teamId={team.id}
+                      token={team.inviteToken?.token}
+                      onExit={() => setShowModal(false)}
+                      onSubmit={(values, resetFields) => {
+                        inviteMemberMutation.mutate(
+                          {
+                            teamId: team.id,
+                            language: i18n.language,
+                            role: MembershipRole.MEMBER,
+                            usernameOrEmail: values.emailOrUsername,
+                            sendEmailInvitation: true,
+                          },
+                          {
+                            onSuccess: async (data) => {
+                              await utils.viewer.teams.get.invalidate();
+                              setShowModal(false);
+                              if (data.sendEmailInvitation) {
+                                showToast(
+                                  t("email_invite_team", {
+                                    email: data.usernameOrEmail,
+                                  }),
+                                  "success"
+                                );
+                              }
+                              await router.replace(router.asPath);
+                            },
+                            onError: (error) => {
+                              showToast(error.message, "error");
+                            },
+                          }
+                        );
+                      }}
+                    />
+                  )}
+                </div>
               ))}
             {!showMembers.isOn && team.eventTypes && team.eventTypes.length > 0 && (
               <div className="mx-auto max-w-3xl ">
@@ -302,6 +360,8 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     isTeamView: true,
     isOrgView: isValidOrgDomain && isOrgProfile,
   });
+
+  //const { data: team, isLoading } = trpc.viewer.teams.get.useQuery({ teamId }, { enabled: !!teamId });
 
   if (!isOrgContext && slug) {
     const redirect = await getTemporaryOrgRedirect({

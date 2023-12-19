@@ -55,10 +55,8 @@ const resolveEndpoint = (links: any) => {
   // - viewer.me - 2 segment paths like this are for logged in requests
   // - viewer.public.i18n - 3 segments paths can be public or authed
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  console.log("resolve");
   return (ctx: any) => {
     const parts = ctx.op.path.split(".");
-    console.log("ctx", parts);
     let endpoint;
     let path = "";
     if (parts.length == 2) {
@@ -68,7 +66,6 @@ const resolveEndpoint = (links: any) => {
       endpoint = parts[1] as keyof typeof links;
       path = parts.splice(2, parts.length - 2).join(".");
     }
-    console.log(endpoint);
     return links[endpoint]({ ...ctx, op: { ...ctx.op, path } });
   };
 };
