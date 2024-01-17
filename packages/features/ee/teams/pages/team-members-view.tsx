@@ -8,7 +8,7 @@ import { MembershipRole } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import { Button, Meta, showToast, TextField } from "@calcom/ui";
-import { Plus } from "@calcom/ui/components/icon";
+import { Plus, Shuffle } from "@calcom/ui/components/icon";
 
 import { getLayout } from "../../../settings/layouts/SettingsLayout";
 import DisableTeamImpersonation from "../components/DisableTeamImpersonation";
@@ -17,6 +17,8 @@ import MakeTeamPrivateSwitch from "../components/MakeTeamPrivateSwitch";
 import MemberInvitationModal from "../components/MemberInvitationModal";
 import MemberListItem from "../components/MemberListItem";
 import TeamInviteList from "../components/TeamInviteList";
+
+import { PlayerRankingList } from "@calcom/web/components/team/screens/PlayerRankingList";
 
 type Team = RouterOutputs["viewer"]["teams"]["get"];
 
@@ -27,12 +29,23 @@ interface MembersListProps {
 const checkIfExist = (comp: string, query: string) =>
   comp.toLowerCase().replace(/\s+/g, "").includes(query.toLowerCase().replace(/\s+/g, ""));
 
+
+const randomizeOrder = (members) => {
+  return [...members].sort(() => 0.5 - Math.random());
+};
 function MembersList(props: MembersListProps) {
   const { team } = props;
   const { t } = useLocale();
   const [query, setQuery] = useState<string>("");
 
-  const members = team?.members;
+  const isTournamentInProgress = team?.tournament?.started;
+  const [randomizedMembers, setRandomizedMembers] = useState(team?.members);
+  const handleRandomize = () => {
+    if (team?.members) {
+      setRandomizedMembers(randomizeOrder(team.members));
+    }
+  };
+  const members = randomizedMembers;
   const membersList = members
     ? members && query === ""
       ? members
@@ -53,6 +66,16 @@ function MembersList(props: MembersListProps) {
         value={query}
         placeholder={`${t("search")}...`}
       />
+
+      <Button
+        type="button"
+        color="primary"
+        StartIcon={Shuffle}
+        className="ml-auto"
+        onClick={() => {handleRandomize()}}
+        data-testid="randomize button">
+        Randomize order
+      </Button>
       {membersList?.length && team ? (
         <ul className="divide-subtle border-subtle divide-y rounded-md border ">
           {membersList.map((member) => {
@@ -117,13 +140,14 @@ const MembersView = () => {
     currentOrg &&
     (currentOrg.user.role === MembershipRole.OWNER || currentOrg.user.role === MembershipRole.ADMIN);
 
+  const hasStarted = team?.tournament?.started;
+console.log(hasStarted);
   return (
     <>
       <Meta
         title="Tournament members"
         description="List of tournament members"
-        CTA={
-          isAdmin || isOrgAdminOrOwner ? (
+        CTA={ isAdmin ? (
             <Button
               type="button"
               color="primary"
@@ -159,7 +183,14 @@ const MembersView = () => {
               </>
             )}
 
-            {((team?.isPrivate && isAdmin) || !team?.isPrivate || isOrgAdminOrOwner) && (
+            {(hasStarted) && (
+              <>
+                <PlayerRankingList team={team} loading={isTeamsLoading} />
+                <hr className="border-subtle my-8" />
+              </>
+              )}
+
+            {(team?.isPrivate && isAdmin && !hasStarted) && (
               <>
                 <MembersList team={team} />
                 <hr className="border-subtle my-8" />

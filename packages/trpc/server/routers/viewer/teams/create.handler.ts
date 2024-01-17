@@ -81,8 +81,8 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
         create: {
           name,
           slug,
-          startDate: tournamentStartDate,
-          endDate: tournamentEndDate,
+          //startDate: tournamentStartDate,
+          //endDate: tournamentEndDate,
 
           // ...etc...
         },

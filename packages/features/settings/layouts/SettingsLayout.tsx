@@ -400,7 +400,7 @@ const SettingsSidebarContainer = ({
                                   />
                                 )}
                                 <VerticalTabItem
-                                  name={t("members")}
+                                  name={"Players"}
                                   href={`/settings/teams/${team.id}/members`}
                                   textClassNames="px-3 text-emphasis font-medium text-sm"
                                   disableChevron
@@ -434,14 +434,12 @@ const SettingsSidebarContainer = ({
                                           textClassNames="px-3 text-emphasis font-medium text-sm"
                                           disableChevron
                                         />
-                                        {HOSTED_CAL_FEATURES && (
-                                          <VerticalTabItem
-                                            name={t("saml_config")}
-                                            href={`/settings/teams/${team.id}/sso`}
-                                            textClassNames="px-3 text-emphasis font-medium text-sm"
-                                            disableChevron
-                                          />
-                                        )}
+                                        <VerticalTabItem
+                                          name={t("saml_config")}
+                                          href={`/settings/teams/${team.id}/sso`}
+                                          textClassNames="px-3 text-emphasis font-medium text-sm"
+                                          disableChevron
+                                        />
                                       </>
                                     ) : null}
                                   </>

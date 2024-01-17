@@ -764,6 +764,8 @@ model Tournament {
   teamId    Int?
   team      Team?            @relation
   slots     Int?
+  started   Boolean          @default(false)
+  completed Boolean          @default(false)
 
   @@unique([teamId])
 }
@@ -798,7 +800,7 @@ model UserMatch {
   matchId   Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
-  score     Int
+  score     Int?
 
   // Define the relationships
   user  User  @relation(fields: [userId], references: [id])
@@ -808,10 +810,10 @@ model UserMatch {
 model Match {
   id           Int      @id @default(autoincrement())
   tournamentId Int
-  round        Int
-  matchNumber  Int
+  round        Int?
+  matchNumber  Int?
   scores       Int[] // Scores for each player
-  winnerIds    Int[]
+  winnerIds    Int[]  // Ids of the winners
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now())
 

@@ -55,6 +55,16 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     theme: input.theme,
   };
 
+  const tournamentData: Prisma.TournamentUpdateArgs["tournamentData"] = {
+    name: input.name,
+    logo: input.logo,
+    bio: input.bio,
+    start_date: input.start_date,
+    start_time: input.start_time,
+    slots: input.slots,
+    type: input.type,
+  };
+
   if (
     input.slug &&
     IS_TEAM_BILLING_ENABLED &&
@@ -82,22 +92,21 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
       where: { id: input.id },
       data: {
         ...data, // Other data fields for the Team
-        tournament: {
-          update: {
-            data: {
-              name: input.name,
-            },
-          },
-        },
       },
     });
-
     // Combine startDate and startTime into a DateTime object
     const tournamentDateTime =
       input.start_date && input.start_time ? new Date(`${input.start_date}T${input.start_time}`) : null;
 
     // Format as ISO string for Prisma DateTime
     const formattedDateTime = tournamentDateTime ? tournamentDateTime.toISOString() : null;
+    await prisma.tournament.update({
+      where: { id: input.tournamentId },
+      data: {
+        ...tournamentData
+      },
+    });
+
     // Sync Services: Close.com
     if (prevTeam) closeComUpdateTeam(prevTeam, updatedTeam);
   } catch (error) {

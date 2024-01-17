@@ -78,6 +78,21 @@ export async function getTeamWithMembers(args: {
         slug: true,
       },
     },
+    tournament: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        slots: true,
+        startDate: true,
+        startTime: true,
+        endDate: true,
+        type: true,
+        location: true,
+        started: true,
+        completed: true,
+      }
+    },
     members: {
       select: {
         accepted: true,

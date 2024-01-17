@@ -4,6 +4,8 @@ import { ZAcceptOrLeaveInputSchema } from "./acceptOrLeave.schema";
 import { ZChangeMemberRoleInputSchema } from "./changeMemberRole.schema";
 import { ZCreateInputSchema } from "./create.schema";
 import { ZCreateInviteInputSchema } from "./createInvite.schema";
+
+import { ZCreateScheduleInputSchema } from "./createSchedule.schema";
 import { ZDeleteInputSchema } from "./delete.schema";
 import { ZDeleteInviteInputSchema } from "./deleteInvite.schema";
 import { ZGetInputSchema } from "./get.schema";
@@ -17,8 +19,11 @@ import { ZPublishInputSchema } from "./publish.schema";
 import { ZRemoveMemberInputSchema } from "./removeMember.schema";
 import { ZResendInvitationInputSchema } from "./resendInvitation.schema";
 import { ZSetInviteExpirationInputSchema } from "./setInviteExpiration.schema";
+
+import { ZStartOrStopInputSchema } from "./startOrStop.schema";
 import { ZUpdateInputSchema } from "./update.schema";
 import { ZUpdateMembershipInputSchema } from "./updateMembership.schema";
+
 
 type TeamsRouterHandlerCache = {
   get?: typeof import("./get.handler").getHandler;
@@ -40,11 +45,13 @@ type TeamsRouterHandlerCache = {
   hasTeamPlan?: typeof import("./hasTeamPlan.handler").hasTeamPlanHandler;
   listInvites?: typeof import("./listInvites.handler").listInvitesHandler;
   createInvite?: typeof import("./createInvite.handler").createInviteHandler;
+  createSchedule?: typeof import("./createSchedule.handler").createScheduleHandler;
   setInviteExpiration?: typeof import("./setInviteExpiration.handler").setInviteExpirationHandler;
   deleteInvite?: typeof import("./deleteInvite.handler").deleteInviteHandler;
   inviteMemberByToken?: typeof import("./inviteMemberByToken.handler").inviteMemberByTokenHandler;
   hasEditPermissionForUser?: typeof import("./hasEditPermissionForUser.handler").hasEditPermissionForUser;
   resendInvitation?: typeof import("./resendInvitation.handler").resendInvitationHandler;
+  startOrStop?: typeof import("./startOrStop.handler").startOrStopHandler;
 };
 
 const UNSTABLE_HANDLER_CACHE: TeamsRouterHandlerCache = {};
@@ -382,6 +389,23 @@ export const viewerTeamsRouter = router({
     });
   }),
 
+  createSchedule: authedProcedure.input(ZCreateScheduleInputSchema).mutation(async ({ ctx, input }) => {
+    if (!UNSTABLE_HANDLER_CACHE.createSchedule) {
+      UNSTABLE_HANDLER_CACHE.createSchedule = await import("./createSchedule.handler").then(
+        (mod) => mod.createScheduleHandler
+      );
+    }
+
+    if (!UNSTABLE_HANDLER_CACHE.createSchedule) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.createSchedule({
+      ctx,
+      input,
+    });
+  }),
+
   setInviteExpiration: authedProcedure
     .input(ZSetInviteExpirationInputSchema)
     .mutation(async ({ ctx, input }) => {
@@ -469,6 +493,23 @@ export const viewerTeamsRouter = router({
     }
 
     return UNSTABLE_HANDLER_CACHE.resendInvitation({
+      ctx,
+      input,
+    });
+  }),
+  startOrStop: authedProcedure.input(ZStartOrStopInputSchema).mutation(async ({ ctx, input }) => {
+    if (!UNSTABLE_HANDLER_CACHE.startOrStop) {
+      UNSTABLE_HANDLER_CACHE.startOrStop = await import("./startOrStop.handler").then(
+        (mod) => mod.startOrStopHandler
+      );
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.startOrStop) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.startOrStop({
       ctx,
       input,
     });

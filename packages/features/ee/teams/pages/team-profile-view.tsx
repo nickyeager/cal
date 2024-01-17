@@ -18,7 +18,7 @@ import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import objectKeys from "@calcom/lib/objectKeys";
 import slugify from "@calcom/lib/slugify";
 import turndown from "@calcom/lib/turndownService";
-import { MembershipRole } from "@calcom/prisma/enums";
+import { MembershipRole, TournamentType } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import {
   Avatar,
@@ -39,10 +39,11 @@ import {
   SkeletonText,
   TextField,
 } from "@calcom/ui";
-import { ExternalLink, Link as LinkIcon, LogOut, Trash2 } from "@calcom/ui/components/icon";
+import { ExternalLink, Link as LinkIcon, LogOut, Trash2, ThumbsUp, StopCircle } from "@calcom/ui/components/icon";
 
 import dayjs from "../../../../dayjs";
 import { getLayout } from "../../../settings/layouts/SettingsLayout";
+import { Start } from "twilio/lib/twiml/VoiceResponse";
 
 const regex = new RegExp("^[a-zA-Z0-9-]*$");
 
@@ -58,6 +59,8 @@ const teamProfileFormSchema = z.object({
   bio: z.string(),
   start_time: z.string(),
   start_date: z.string(),
+  slots: z.number(),
+  type: z.string(),
 });
 
 const ProfileView = () => {
@@ -70,11 +73,12 @@ const ProfileView = () => {
   const [firstRender, setFirstRender] = useState(true);
   const orgBranding = useOrgBranding();
 
-  const [selectedDate, setSelectedDate] = useState(dayjs());
-
   useLayoutEffect(() => {
     document.body.focus();
   }, []);
+
+
+
 
   const mutation = trpc.viewer.teams.update.useMutation({
     onError: (err) => {
@@ -87,13 +91,9 @@ const ProfileView = () => {
   });
 
   const defaultStartTime = "09:00";
-  const defaultStartDate = new Date();
 
   const form = useForm({
     resolver: zodResolver(teamProfileFormSchema),
-    defaultValues: {
-      start_time: defaultStartTime,
-    },
   });
 
   const { data: team, isLoading } = trpc.viewer.teams.get.useQuery(
@@ -109,8 +109,10 @@ const ProfileView = () => {
           form.setValue("slug", team.slug || "");
           form.setValue("bio", team.bio || "");
           form.setValue("logo", team.logo || "");
-          form.setValue("start_time", team.start_time || defaultStartTime);
-          form.setValue("start_date", team.start_date || "");
+          form.setValue("start_time", team?.tournament?.startTime || defaultStartTime);
+          form.setValue("start_date", team?.tournament?.startDate || "");
+          form.setValue("type", team?.tournament?.type || "");
+          form.setValue("slots", Number(team.tournament?.slots) || "");
           if (team.slug === null && (team?.metadata as Prisma.JsonObject)?.requestedSlug) {
             form.setValue("slug", ((team?.metadata as Prisma.JsonObject)?.requestedSlug as string) || "");
           }
@@ -123,13 +125,11 @@ const ProfileView = () => {
     team && (team.membership.role === MembershipRole.OWNER || team.membership.role === MembershipRole.ADMIN);
 
   const permalink = `${WEBAPP_URL}/team/${team?.slug}`;
-
   const isBioEmpty = !team || !team.bio || !team.bio.replace("<p><br></p>", "").length;
-
   const deleteTeamMutation = trpc.viewer.teams.delete.useMutation({
     async onSuccess() {
       await utils.viewer.teams.list.invalidate();
-      showToast("Your tournament has been ", "success");
+      showToast("Your tournament has been updated", "success");
       router.push(`${WEBAPP_URL}/teams`);
     },
   });
@@ -174,6 +174,31 @@ const ProfileView = () => {
     return { value: `${hour}:00`, label: `${hour}:00` };
   });
 
+  const tournamentOptions = Object.entries(TournamentType).map(([key, value]) => ({
+    value: value,
+    label: key.replace(/_/g, ' ').replace(/\w\S*/g, (w) => (w.replace(/^\w/, (c) => c.toUpperCase()))),
+  }));
+
+  const startOrStopMutation = trpc.viewer.teams.startOrStop.useMutation({
+    onSuccess: async () => {
+      showToast(t("success"), "success");
+      await utils.viewer.teams.get.invalidate();
+      // await utils.viewer.teams.hasTeamPlan.invalidate();
+      // await utils.viewer.teams.list.invalidate();
+      // await utils.viewer.organizations.listMembers.invalidate();
+    },
+  });
+
+  function startOrStop(accept: boolean) {
+
+    startOrStopMutation.mutate({
+      tournamentId: team?.tournament.id as number,
+      started: accept,
+    });
+  }
+
+  const toggleTournamentStarted = () => startOrStop(team?.tournament.started ? false : true);
+
   return (
     <>
       <Meta title="Tournament" description="Tournament information" />
@@ -189,13 +214,15 @@ const ProfileView = () => {
                     slug: values.slug,
                     bio: values.bio,
                     logo: values.logo,
-                    start_time: values.start_time,
-                    start_date: values.start_date,
+                    startTime: values.start_time,
+                    startDate: values.start_date,
+                    type: values.type,
+                    slots: Number(values.slots),
+                    tournamentId: team?.tournament?.id
                   };
                   objectKeys(variables).forEach((key) => {
                     if (variables[key as keyof typeof variables] === team?.[key]) delete variables[key];
                   });
-
                   mutation.mutate({ id: team.id, ...variables });
                 }
               }}>
@@ -286,6 +313,29 @@ const ProfileView = () => {
                   </div>
                 )}
               />
+
+              <Controller
+                control={form.control}
+                name="type"
+                render={({ field }) => {
+                  return (
+                    <div className="mt-8">
+                      <Label>Tournament Type</Label>
+                      <Select
+                        placeholder="Type"
+                        options={tournamentOptions}
+                        defaultValue={timeOptions.find((option) => option.value === "ROUND_ROBIN")} // Set default value here
+                        isSearchable={true}
+                        value={tournamentOptions.find((option) => option.value === field.value)} // Set the value from RHF state
+                        onChange={(selected) => {
+                          field.onChange(selected ? selected.value : ""); // Update RHF state
+                        }}
+                        className="block w-full min-w-0 flex-1 rounded-sm text-sm "
+                      />
+                    </div>
+                  );
+                }}
+              />
               <Controller
                 control={form.control}
                 name="start_time"
@@ -303,13 +353,29 @@ const ProfileView = () => {
                           field.onChange(selected ? selected.value : ""); // Update RHF state
                         }}
                         className="block w-full min-w-0 flex-1 rounded-sm text-sm "
-                        // Connect the ref for focus management
                       />
                     </div>
                   );
                 }}
               />
-
+              <Controller
+                control={form.control}
+                name="slots"
+                render={({ field: { value } }) => (
+                  <div className="mt-8">
+                    <TextField
+                      type="number"
+                      name="slots"
+                      label="Number of slots"
+                      value={value}
+                      defaultValue={8}
+                      onChange={(e) => {
+                        form.setValue("slots", e?.target.valueAsNumber);
+                      }}
+                    />
+                  </div>
+                )}
+              />
               <div className="mt-8">
                 <Label>{t("about")}</Label>
                 <Editor
@@ -321,7 +387,7 @@ const ProfileView = () => {
                   setFirstRender={setFirstRender}
                 />
               </div>
-              <p className="text-default mt-2 text-sm">{t("team_description")}</p>
+              <p className="text-default mt-2 text-sm" >Describe the tournament in a few words. This will appear on your tournament page.</p>
               <Button color="primary" className="mt-8" type="submit" loading={mutation.isLoading}>
                 {t("update")}
               </Button>
@@ -366,42 +432,63 @@ const ProfileView = () => {
                     navigator.clipboard.writeText(permalink);
                     showToast("Copied to clipboard", "success");
                   }}>
-                  {t("copy_link_team")}
+                  Copy the link to the tournament
                 </LinkIconButton>
               </div>
             </div>
           )}
           <hr className="border-subtle my-8 border" />
+          {team?.membership.role === "OWNER" && (
+            <div>
+              <div className="text-default mb-3 text-base font-semibold">Tournament Management</div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button color="destructive" className="border" StartIcon={team?.tournament?.started ? StopCircle : ThumbsUp}>
+                    {team?.tournament?.started ? "Stop" : "Start"} tournament
+                  </Button>
+                </DialogTrigger>
+                <ConfirmationDialogContent
+                  variety="warning"
+                  title={team?.tournament?.started ? "Stop tournament" : "Start tournament"}
+                  confirmBtnText={team?.tournament?.started ? "Stop Tournament" : "Start Tournament"}
+                  onConfirm={toggleTournamentStarted}>
+                  {team?.tournament?.started ? "Stopping the tournament will change the current view and will end all matches ." : "Starting a tournament "}
+                </ConfirmationDialogContent>
+              </Dialog>
+            </div>
+            )}
+
+            <hr className="border-subtle my-8 border" />
 
           <div className="text-default mb-3 text-base font-semibold">{t("danger_zone")}</div>
           {team?.membership.role === "OWNER" ? (
             <Dialog>
               <DialogTrigger asChild>
                 <Button color="destructive" className="border" StartIcon={Trash2}>
-                  {t("disband_team")}
+                  Delete tournament
                 </Button>
               </DialogTrigger>
               <ConfirmationDialogContent
                 variety="danger"
-                title={t("disband_team")}
-                confirmBtnText={t("confirm_disband_team")}
+                title={"Delete Tournament"}
+                confirmBtnText={"Are you sure you'd like to delete the tournament?"}
                 onConfirm={deleteTeam}>
-                {t("disband_team_confirmation_message")}
+                {"The tournament has been deleted."}
               </ConfirmationDialogContent>
             </Dialog>
           ) : (
             <Dialog>
               <DialogTrigger asChild>
                 <Button color="destructive" className="border" StartIcon={LogOut}>
-                  {t("leave_team")}
+                  Leave tournament
                 </Button>
               </DialogTrigger>
               <ConfirmationDialogContent
                 variety="danger"
-                title={t("leave_team")}
-                confirmBtnText={t("confirm_leave_team")}
+                title={"Leave the tournament"}
+                confirmBtnText={"Are you sure you'd like to leave? "}
                 onConfirm={leaveTeam}>
-                {t("leave_team_confirmation_message")}
+                {"You've left the tournament"}
               </ConfirmationDialogContent>
             </Dialog>
           )}

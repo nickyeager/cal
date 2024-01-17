@@ -90,6 +90,11 @@ function TeamPage({
   // slug is a route parameter, we don't want to forward it to the next route
   const { slug: _slug, orgSlug: _orgSlug, user: _user, ...queryParamsToForward } = routerQuery;
 
+  const memberAcceptedCount = team.members.filter(
+    (mem) => mem.accepted
+  ).length;
+
+  console.log(team);
   const EventTypes = ({ eventTypes }: { eventTypes: NonNullable<(typeof team)["eventTypes"]> }) => (
     <ul className="border-subtle rounded-md border">
       {eventTypes.map((type, index) => (
@@ -238,12 +243,12 @@ function TeamPage({
               ) : (
                 <div className="mx-auto my-10 max-w-2xl">
                   <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <h2 className="text-xl font-bold">Players</h2>
+                    <h4 className="text-xl font-bold">Players <p>{memberAcceptedCount}/{team.tournament.slots}</p></h4>
                     <Button
                       className="mt-4 px-4 py-2 sm:mt-0"
                       color="secondary"
                       onClick={() => setShowModal(true)}>
-                      Add Players
+                      <h4>Add Players</h4>
                     </Button>
                   </div>
                   <PlayerList members={team.members} />
