@@ -1,23 +1,25 @@
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
-import Match from "@calcom/features/ee/teams/components/Match";
-import DraggablePlayer from "@calcom/features/ee/teams/components/DraggablePlayer";
 
-import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import {
   Button,
   Dialog,
   DialogClose,
   DialogContent,
   DialogFooter,
-  DialogHeader, Divider,
+  DialogHeader,
   showToast,
-  TextArea
 } from "@calcom/ui";
+
 import useCurrentUserId from "@lib/hooks/useCurrentUserId";
 
 interface ITournamentScheduleDialog {
@@ -29,14 +31,9 @@ interface ITournamentScheduleDialog {
 }
 
 export const TournamentScheduleDialog = (props: ITournamentScheduleDialog) => {
-  //const { t } = useLocale();
-  //const utils = trpc.useContext();
   const { isOpenDialog, setIsOpenDialog, schedule, tournamentId, teamId } = props;
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor)
-  );
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
   const currentUserId = useCurrentUserId();
   const [localSchedule, setLocalSchedule] = useState(schedule);
 
@@ -52,7 +49,7 @@ export const TournamentScheduleDialog = (props: ITournamentScheduleDialog) => {
     const [overRound, overMatch, overPlayer] = over.id.split("-").slice(1).map(Number);
 
     // Implement logic to update the schedule
-    let newSchedule = [...localSchedule];
+    const newSchedule = [...localSchedule];
 
     // Example logic: swap players between matches
     // Note: This is a simplified logic. You might need more complex handling depending on your data structure.
@@ -65,14 +62,12 @@ export const TournamentScheduleDialog = (props: ITournamentScheduleDialog) => {
 
   const updateSchedule = trpc.viewer.teams.createSchedule.useMutation({
     onSuccess: () => {
-      console.log('onSuccess');
+      console.log("onSuccess");
       setIsOpenDialog(false);
       showToast("Matches set", "success");
     },
     onError: (e) => {
-      console.log(e);
-      console.log('onError');
-      showToast("Charge successful", "error");
+      showToast("There was an error setting matches", "error");
     },
   });
 
@@ -82,10 +77,10 @@ export const TournamentScheduleDialog = (props: ITournamentScheduleDialog) => {
         <DialogContent enableOverflow>
           <div className="space-x-3">
             <div className="pt-1">
-              <DialogHeader title={"Schedules"} />
+              <DialogHeader title="Schedules" />
               <p className="text-subtle text-sm">The current generated schedule</p>
 
-              {schedule.length > 0 && (
+              {/*              {schedule.length > 0 && (
                 <div>
                   <span className="text-emphasis mb-2 mt-6 text-sm font-bold">Round Robin Schedule for Doubles</span>
                   <ol>
@@ -94,6 +89,7 @@ export const TournamentScheduleDialog = (props: ITournamentScheduleDialog) => {
                         <h3 className="text-emphasis font-bold">Round {roundIndex + 1}</h3>
                         <SortableContext key={`round-${roundIndex}`} items={round.flatMap((match, matchIndex) => [`round-${roundIndex}-match-${matchIndex}-player-0`, `round-${roundIndex}-match-${matchIndex}-player-1`])} strategy={verticalListSortingStrategy}>
                           {round.map((match, matchIndex) => (
+
                             <div key={`round-${roundIndex}-match-${matchIndex}`}>
                                 <DraggablePlayer player={match.home.name} roundIndex={roundIndex} matchIndex={matchIndex} playerIndex={0} />
                                 <DraggablePlayer player={match.away.name} roundIndex={roundIndex} matchIndex={matchIndex} playerIndex={1} />
@@ -105,7 +101,7 @@ export const TournamentScheduleDialog = (props: ITournamentScheduleDialog) => {
                     ))}
                   </ol>
                 </div>
-              )}
+              )}*/}
               <DialogFooter>
                 <DialogClose />
                 <Button

@@ -1,22 +1,17 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Plus, Shuffle, View } from "lucide-react";
+import { Shuffle, View } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useMemo, useRef, useReducer, useState } from "react";
+import { useMemo, useRef } from "react";
 
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import type { MembershipRole } from "@calcom/prisma/enums";
-import { RouterOutputs, trpc } from "@calcom/trpc";
+import type { RouterOutputs } from "@calcom/trpc";
+import { trpc } from "@calcom/trpc";
 import { Avatar, Badge, Button, DataTable, Checkbox } from "@calcom/ui";
 
-import {
-  createDoublesPairs,
-  shuffledPlayers,
-  roundRobinDoubles,
-  generateRoundRobinSchedule,
-  generateMatches
-} from "@calcom/lib/tournaments";
-
 import { TournamentScheduleDialog } from "@components/dialog/TournamentScheduleDialog";
+
+import { RoundRobinScheduleList } from "./RoundRobinScheduleList";
 
 export interface User {
   id: number;
@@ -52,38 +47,23 @@ type Team = RouterOutputs["viewer"]["teams"]["get"];
 interface PlayerRankingProps {
   team: Team | undefined;
   loading: boolean;
+  schedule: any;
+  isScheduleOpen: boolean;
+  generateRoundRobin: any;
+  openSchedule: boolean;
+  setOpenSchedule: any;
 }
 
 export function PlayerRankingList(props: PlayerRankingProps) {
   const { data: session } = useSession();
 
-  const [openSchedule, setOpenSchedule] = useState(false);
-  const [schedule, setSchedule] = useState([]);
   const { data: currentMembership } = trpc.viewer.organizations.listCurrent.useQuery();
 
-  const { team, loading } = props;
-
+  const { team, loading, schedule, generateRoundRobin, setOpenSchedule, openSchedule } = props;
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const adminOrOwner = currentMembership?.user.role === "ADMIN" || currentMembership?.user.role === "OWNER";
   const domain = WEBAPP_URL;
-
-  const generateRoundRobinBracket = () => {
-    if (team?.members) {
-      // Shuffle team members to randomize initial pairings
-      const shuffledPlayers = [...team.members].sort(() => 0.5 - Math.random());
-      // Create doubles pairs
-      const playerNames = shuffledPlayers.map(member => member.name);
-      // Generate the round-robin schedule
-      //const schedule = generateRoundRobinSchedule(playerNames);
-
-      const schedule = generateMatches(shuffledPlayers);
-
-      setSchedule(schedule);
-      setOpenSchedule(true);
-    }
-  };
-
   const memorisedColumns = useMemo(() => {
     const cols: ColumnDef<User>[] = [
       {
@@ -196,9 +176,8 @@ export function PlayerRankingList(props: PlayerRankingProps) {
               size="sm"
               className="rounded-md"
               onClick={() => {
-                  setOpenSchedule(true);
-                }
-              }>
+                setOpenSchedule(true);
+              }}>
               View Schedule
             </Button>
             <Button
@@ -207,17 +186,20 @@ export function PlayerRankingList(props: PlayerRankingProps) {
               StartIcon={Shuffle}
               size="sm"
               className="rounded-md"
-              onClick={generateRoundRobinBracket}>
+              onClick={generateRoundRobin}>
               Generate Round Robin Bracket
             </Button>
           </>
         }
       />
-      <TournamentScheduleDialog isOpenDialog={openSchedule}
-                                setIsOpenDialog={setOpenSchedule}
-                                schedule={schedule}
-                                teamId={teamId}
-                                tournamentId={tournamentId} />
+      <TournamentScheduleDialog
+        isOpenDialog={openSchedule}
+        setIsOpenDialog={setOpenSchedule}
+        schedule={schedule}
+        teamId={teamId}
+        tournamentId={tournamentId}
+      />
+      {schedule && <RoundRobinScheduleList team={team} schedule={schedule} />}
     </>
   );
 }

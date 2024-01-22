@@ -1,14 +1,16 @@
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
+import { generateMatches, sortMatchesIntoRounds } from "@calcom/lib/tournaments";
 import { MembershipRole } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import { Button, Meta, showToast, TextField } from "@calcom/ui";
 import { Plus, Shuffle } from "@calcom/ui/components/icon";
+import { PlayerRankingList } from "@calcom/web/components/team/screens/PlayerRankingList";
 
 import { getLayout } from "../../../settings/layouts/SettingsLayout";
 import DisableTeamImpersonation from "../components/DisableTeamImpersonation";
@@ -18,8 +20,6 @@ import MemberInvitationModal from "../components/MemberInvitationModal";
 import MemberListItem from "../components/MemberListItem";
 import TeamInviteList from "../components/TeamInviteList";
 
-import { PlayerRankingList } from "@calcom/web/components/team/screens/PlayerRankingList";
-
 type Team = RouterOutputs["viewer"]["teams"]["get"];
 
 interface MembersListProps {
@@ -28,7 +28,6 @@ interface MembersListProps {
 
 const checkIfExist = (comp: string, query: string) =>
   comp.toLowerCase().replace(/\s+/g, "").includes(query.toLowerCase().replace(/\s+/g, ""));
-
 
 const randomizeOrder = (members) => {
   return [...members].sort(() => 0.5 - Math.random());
@@ -72,7 +71,9 @@ function MembersList(props: MembersListProps) {
         color="primary"
         StartIcon={Shuffle}
         className="ml-auto"
-        onClick={() => {handleRandomize()}}
+        onClick={() => {
+          handleRandomize();
+        }}
         data-testid="randomize button">
         Randomize order
       </Button>
@@ -102,6 +103,8 @@ const MembersView = () => {
   const showDialog = searchParams?.get("inviteModal") === "true";
   const [showMemberInvitationModal, setShowMemberInvitationModal] = useState(showDialog);
   const [showInviteLinkSettingsModal, setInviteLinkSettingsModal] = useState(false);
+  const [openSchedule, setOpenSchedule] = useState(false);
+  const [schedule, setSchedule] = useState([]);
   const { data: currentOrg } = trpc.viewer.organizations.listCurrent.useQuery(undefined, {
     enabled: !!session.data?.user?.org,
   });
@@ -127,10 +130,19 @@ const MembersView = () => {
     }
   );
 
+  const initialSchedule = team?.tournament?.matches;
+  console.log("initialSchedule");
+  console.log(initialSchedule);
+  useEffect(() => {
+    if (initialSchedule) {
+      const sortedMatches = sortMatchesIntoRounds(initialSchedule);
+      console.log(sortedMatches);
+      setSchedule(sortedMatches);
+    }
+  }, [initialSchedule]);
+
   const isLoading = isOrgListLoading || isTeamsLoading;
-
   const inviteMemberMutation = trpc.viewer.teams.inviteMember.useMutation();
-
   const isInviteOpen = !team?.membership.accepted;
 
   const isAdmin =
@@ -141,13 +153,24 @@ const MembersView = () => {
     (currentOrg.user.role === MembershipRole.OWNER || currentOrg.user.role === MembershipRole.ADMIN);
 
   const hasStarted = team?.tournament?.started;
-console.log(hasStarted);
+  const generateRoundRobinBracket = () => {
+    if (team?.members) {
+      // Shuffle team members to randomize initial pairings
+      const shuffledPlayers = [...team.members].sort(() => 0.5 - Math.random());
+      const schedule = generateMatches(shuffledPlayers);
+
+      setSchedule(schedule);
+      setOpenSchedule(true);
+    }
+  };
+
   return (
     <>
       <Meta
         title="Tournament members"
         description="List of tournament members"
-        CTA={ isAdmin ? (
+        CTA={
+          isAdmin ? (
             <Button
               type="button"
               color="primary"
@@ -182,15 +205,21 @@ console.log(hasStarted);
                 )}
               </>
             )}
-
-            {(hasStarted) && (
+            {hasStarted && (
               <>
-                <PlayerRankingList team={team} loading={isTeamsLoading} />
+                <PlayerRankingList
+                  openSchedule={openSchedule}
+                  setOpenSchedule={setOpenSchedule}
+                  team={team}
+                  schedule={schedule}
+                  loading={isTeamsLoading}
+                  generateRoundRobin={generateRoundRobinBracket}
+                />
                 <hr className="border-subtle my-8" />
               </>
-              )}
+            )}
 
-            {(team?.isPrivate && isAdmin && !hasStarted) && (
+            {team?.isPrivate && isAdmin && !hasStarted && (
               <>
                 <MembersList team={team} />
                 <hr className="border-subtle my-8" />

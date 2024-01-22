@@ -1,10 +1,10 @@
+import { isTeamAdmin } from "@calcom/lib/server/queries";
 import { prisma } from "@calcom/prisma";
 import type { TrpcSessionUser } from "@calcom/trpc/server/trpc";
 
 import { TRPCError } from "@trpc/server";
 
 import type { TCreateScheduleInputSchema } from "./createSchedule.schema";
-import { isTeamAdmin } from "@calcom/lib/server/queries";
 
 type CreateScheduleHandlerOptions = {
   ctx: {
@@ -35,12 +35,12 @@ export const createScheduleHandler = async ({ ctx, input }: CreateScheduleHandle
         players: {
           create: [
             { userId: match.home.id }, // Ensure 'match.home' is a valid user ID
-            { userId: match.away.id }  // Ensure 'match.away' is a valid user ID
-          ]
+            { userId: match.away.id }, // Ensure 'match.away' is a valid user ID
+          ],
         },
       }))
     );
-console.log(matchData);
+
     // Debugging: Log the matchData structure
     console.log("Generated match data:", matchData);
 

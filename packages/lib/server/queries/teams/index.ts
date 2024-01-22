@@ -91,8 +91,27 @@ export async function getTeamWithMembers(args: {
         location: true,
         started: true,
         completed: true,
-      }
+        matches: {
+          select: {
+            round: true,
+            players: {
+              select: {
+                user: true,
+                score: true,
+                updatedAt: true,
+                createdAt: true,
+              },
+            },
+            id: true,
+            matchNumber: true,
+            createdAt: true,
+            updatedAt: true,
+            scores: true,
+          },
+        },
+      },
     },
+
     members: {
       select: {
         accepted: true,
@@ -154,7 +173,7 @@ export async function getTeamWithMembers(args: {
     where,
     select: teamSelect,
   });
-
+  console.log(teams);
   if (teams.length > 1) {
     logger.error("Found more than one team/Org. We should be doing something wrong.", {
       where,
